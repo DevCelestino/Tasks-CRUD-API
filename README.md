@@ -2,7 +2,7 @@
 
 ## Descrição
 
-Este projeto é uma REST API para gerenciamento de tarefas vinculadas a pessoas. Ele permite a criação, leitura, atualização e exclusão (CRUD) de tarefas, utilizando uma arquitetura que inclui serviços, controladores, DTOs, entidades e repositórios. A adição de tarefas é feita através de uma mensageria RabbitMQ, utilizando um consumer para processar as mensagens.
+Este projeto é uma REST API para gerenciamento de tarefas vinculadas a pessoas. Ele permite a criação, leitura, atualização e exclusão (CRUD) de tarefas, utilizando uma arquitetura que inclui serviços, controladores, DTOs, entidades e repositórios. A adição de tarefas é feita através de uma mensageria RabbitMQ, utilizando um consumer para processar as mensagens. Além disso, implementa um sistema de cache com Redis para otimizar o acesso a dados frequentemente utilizados, melhorando a performance das operações.
 
 ## Estrutura do Projeto
 
@@ -10,7 +10,7 @@ A estrutura do projeto é organizada da seguinte forma:
 
 - `docker-compose.yml` - Arquivo de configuração do Docker Compose.
 
-# Web API
+## Web API
 
 - `Api/Controllers/` - Gerencia as requisições e respostas da API.
 - `Application/DTOs/` - Objetos de transferência de dados utilizados na aplicação.
@@ -20,7 +20,7 @@ A estrutura do projeto é organizada da seguinte forma:
 - `Infrastructure/Migrations/` - Contém os arquivos de migração para o banco de dados.
 - `Tests/` - Contém os testes automatizados da aplicação.
 
-# Consumer
+## Consumer
 
 - `Application/DTOs/` - Objetos de transferência de dados utilizados na aplicação.
 - `Application/Services/` - Contém a lógica de negócios da aplicação.
@@ -31,6 +31,7 @@ A estrutura do projeto é organizada da seguinte forma:
 
 - **ASP.NET Core e .NET 8.0** para a construção da API e do Consumer.
 - **RabbitMQ** para mensageria.
+- **Redis** para caching.
 - **MSSQL** como banco de dados.
 - **Docker** para containerização.
 
@@ -49,14 +50,17 @@ Para iniciar a aplicação, siga os passos abaixo:
 
 2. Execute o comando:
    ```bash
-   docker-compose up -d
+   docker compose up --build -d
 
 Isso irá iniciar os seguintes containers:
 
 - API (REST) `http://localhost:2000`
 - Consumer (para processar tarefas via RabbitMQ) `http://localhost:2500`
 - RabbitMQ (mensageria) `http://localhost:3000`
+- Redis (cache) `http://localhost:6000`
 - MSSQL (banco de dados) `localhost,1343`
+
+Além disso, ao iniciar os containers, é realizada uma carga de dados inicial com 105 pessoas e 4.000 tarefas vinculadas aleatoriamente a essas pessoas, garantindo que a aplicação já tenha dados para manipulação durante os testes.
 
 ## Endpoints
 

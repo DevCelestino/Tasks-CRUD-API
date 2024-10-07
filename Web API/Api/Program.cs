@@ -4,6 +4,7 @@ using Infraestructure.Configurations;
 using Infraestructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,10 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(
+    builder.Configuration["Redis:ConnectionString"]
+    ?? throw new NullReferenceException("Redis configuration is null.")));
 
 builder.Services.AddApiVersioning(options =>
 {

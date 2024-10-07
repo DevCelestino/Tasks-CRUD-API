@@ -1,9 +1,11 @@
 using Application.DTOs;
 using Application.Services;
+using Application.Services.Interfaces;
 using Domain.Entities;
 using Infrastructure.Messaging.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using Moq;
+using StackExchange.Redis;
 
 namespace Tests.Unit.Services
 {
@@ -15,6 +17,16 @@ namespace Tests.Unit.Services
     public class TasksServiceReadTests
     {
         #region Properties
+
+        /// <summary>
+        /// Mock for the Redis connection multiplexer, simulating interactions with Redis.
+        /// </summary>
+        private Mock<IConnectionMultiplexer> _redisMock;
+
+        /// <summary>
+        /// Instance of <see cref="RedisService"/> for interacting with Redis and repository data.
+        /// </summary>
+        private Mock<IRedisService> _redisServiceMock;
 
         /// <summary>
         /// The instance of <see cref="TasksService"/> being tested.
@@ -46,11 +58,22 @@ namespace Tests.Unit.Services
         [SetUp]
         public void Setup()
         {
+            // Mock Redis connection
+            _redisMock = new Mock<IConnectionMultiplexer>();
+
+            // Mock Redis service
+            _redisServiceMock = new Mock<IRedisService>();
+
+            // Mock repository for tasks and persons
             _tasksRepositoryMock = new Mock<ITasksRepository>();
             _personsRepositoryMock = new Mock<IPersonsRepository>();
+
+            // Mock message sender
             _messageSenderMock = new Mock<IMessageSender>();
 
+            // Initialize the TasksService with the mocked dependencies
             _tasksService = new TasksService(
+                _redisServiceMock.Object,
                 _tasksRepositoryMock.Object,
                 _personsRepositoryMock.Object,
                 _messageSenderMock.Object
@@ -73,7 +96,7 @@ namespace Tests.Unit.Services
             var expectedTask1 = new TasksEntity { Id = 1, Title = "Test Task 1" };
             var expectedTask6 = new TasksEntity { Id = 6, Title = "Test Task 6" };
 
-            _tasksRepositoryMock.Setup(repo => repo.GetByIdsAsync(It.IsAny<List<int>>()))
+            _redisServiceMock.Setup(repo => repo.GetTaskByIdsAsync(It.IsAny<List<int>>()))
                 .ReturnsAsync([expectedTask1, expectedTask6]);
 
             var result = await _tasksService.GetById(taskId);

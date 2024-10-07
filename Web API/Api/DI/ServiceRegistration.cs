@@ -24,6 +24,7 @@ namespace Api.DI
             // Register application services with the DI container
             #region Services
 
+            services.AddScoped<IRedisService, RedisService>();
             services.AddScoped<ITasksService, TasksService>();
             services.AddScoped<IMessageSender, RabbitMqMessageSender>();
 

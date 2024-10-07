@@ -15,11 +15,17 @@ namespace Application.Services
     /// <param name="personsRepository">The persons repository.</param>
     /// <param name="messageSender">The message sender.</param>
     public class TasksService(
+        IRedisService redisService,
         ITasksRepository tasksRepository,
         IPersonsRepository personsRepository,
         IMessageSender messageSender) : ITasksService
     {
         #region Properties
+
+        /// <summary>
+        /// Instance of the Redis service used to manage caching operations.
+        /// </summary>
+        private readonly IRedisService _redisService = redisService;
 
         /// <summary>
         /// Repository for tasks.
@@ -73,9 +79,9 @@ namespace Application.Services
                     .ToList();
             }
 
-            // Retrieves tasks of the specific IDs provided.
-            return (await _tasksRepository
-                .GetByIdsAsync(ids))
+            // Retrieves tasks of the specific IDs provided from Redis.
+            return (await _redisService
+                .GetTaskByIdsAsync(ids))
                 .Select(x => new TasksDTO
                 {
                     Id = x.Id,
@@ -128,9 +134,9 @@ namespace Application.Services
                     .ToList();
             }
 
-            // Retrieves tasks from the persons of the specific person IDs provided.
-            return (await _personsRepository
-                .GetByIdsAsync(ids))
+            // Retrieves tasks from the persons of the specific person IDs provided from Redis.
+            return (await _redisService
+                .GetPersonsByIdsAsync(ids))
                 .Select(x => new PersonTasksDTO
                 {
                     Id = x.Id,
@@ -172,18 +178,24 @@ namespace Application.Services
 
             #endregion
 
-            var task = (await _tasksRepository
-                .GetByIdsAsync([tasksDto.Id]))
+            // Retrieves the task entity.
+            var task = (await _redisService
+                .GetTaskByIdsAsync([tasksDto.Id]))
                 .FirstOrDefault() ?? throw new ArgumentException(null, nameof(tasksDto));
 
+            var oldTaskPersonId = task.PersonId;
+
+            // Updates the task entity.
             task.Title = tasksDto.Title;
             task.PersonId = tasksDto.PersonId;
+            task.Person = person;
             task.Description = tasksDto.Description;
             task.Location = tasksDto.Location;
             task.Severity = tasksDto.Severity;
             task.StartDate = tasksDto.StartDate;
             task.EndDate = tasksDto.EndDate;
 
+            // Saves the task entity.
             await _tasksRepository.UpdateAsync(task);
 
             tasksDto.Person = person is not null ? new PersonsDTO
@@ -191,6 +203,11 @@ namespace Application.Services
                 Id = person.Id,
                 Name = person.Name
             } : null;
+
+            // Clear the cached values for the task and associated persons.
+            await _redisService.RemoveCachedValue($"task:{tasksDto.Id}");
+            await _redisService.RemoveCachedValue($"person:{oldTaskPersonId}");
+            await _redisService.RemoveCachedValue($"person:{tasksDto.PersonId}");
 
             return tasksDto;
         }
@@ -204,8 +221,9 @@ namespace Application.Services
 
             #endregion
 
-            var task = (await _tasksRepository
-                .GetByIdsAsync([id]))
+            // Retrieves the task entity.
+            var task = (await _redisService
+                .GetTaskByIdsAsync([id]))
                 .FirstOrDefault() ?? throw new ArgumentException($"No task found with ID {id}.", nameof(id));
 
             var dto = new TasksDTO
@@ -225,7 +243,12 @@ namespace Application.Services
                 EndDate = task.EndDate
             };
 
+            // Deletes the task entity.
             await _tasksRepository.DeleteAsync(task);
+
+            // Clear the cached values for the task and associated person.
+            await _redisService.RemoveCachedValue($"task:{dto.Id}");
+            await _redisService.RemoveCachedValue($"person:{dto.PersonId}");
 
             return dto;
         }
@@ -247,8 +270,8 @@ namespace Application.Services
             ArgumentNullException.ThrowIfNull(tasksDto, nameof(tasksDto));
 
             // Validates if a person with the provided ID exists.
-            var person = (await _personsRepository
-                .GetByIdsAsync([tasksDto.PersonId]))
+            var person = (await _redisService
+                .GetPersonsByIdsAsync([tasksDto.PersonId]))
                 .FirstOrDefault() ?? throw new ArgumentException($"No person found with ID {tasksDto.PersonId}.", nameof(tasksDto.PersonId));
 
             // Check if the task title is provided and not empty.

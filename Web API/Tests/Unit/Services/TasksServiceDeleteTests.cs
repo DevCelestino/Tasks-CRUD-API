@@ -1,9 +1,11 @@
 using Application.Services;
+using Application.Services.Interfaces;
 using Domain.Entities;
 using Domain.Enumerables;
 using Infrastructure.Messaging.Interfaces;
 using Infrastructure.Repositories.Interfaces;
 using Moq;
+using StackExchange.Redis;
 
 namespace Tests.Unit.Services
 {
@@ -15,6 +17,16 @@ namespace Tests.Unit.Services
     public class TasksServiceDeleteTests
     {
         #region Properties
+
+        /// <summary>
+        /// Mock for the Redis connection multiplexer, simulating interactions with Redis.
+        /// </summary>
+        private Mock<IConnectionMultiplexer> _redisMock;
+
+        /// <summary>
+        /// Instance of <see cref="RedisService"/> for interacting with Redis and repository data.
+        /// </summary>
+        private Mock<IRedisService> _redisServiceMock;
 
         /// <summary>
         /// The instance of <see cref="TasksService"/> being tested.
@@ -46,11 +58,22 @@ namespace Tests.Unit.Services
         [SetUp]
         public void Setup()
         {
+            // Mock Redis connection
+            _redisMock = new Mock<IConnectionMultiplexer>();
+
+            // Mock Redis service
+            _redisServiceMock = new Mock<IRedisService>();
+
+            // Mock repository for tasks and persons
             _tasksRepositoryMock = new Mock<ITasksRepository>();
             _personsRepositoryMock = new Mock<IPersonsRepository>();
+
+            // Mock message sender
             _messageSenderMock = new Mock<IMessageSender>();
 
+            // Initialize the TasksService with the mocked dependencies
             _tasksService = new TasksService(
+                _redisServiceMock.Object,
                 _tasksRepositoryMock.Object,
                 _personsRepositoryMock.Object,
                 _messageSenderMock.Object
@@ -86,7 +109,7 @@ namespace Tests.Unit.Services
                 EndDate = DateTime.Now.AddDays(1).AddHours(4),
             };
 
-            _tasksRepositoryMock.Setup(repo => repo.GetByIdsAsync(It.IsAny<List<int>>()))
+            _redisServiceMock.Setup(repo => repo.GetTaskByIdsAsync(It.IsAny<List<int>>()))
                 .ReturnsAsync([task]);
 
             var result = await _tasksService.Delete(task.Id);
@@ -115,7 +138,7 @@ namespace Tests.Unit.Services
         {
             var id = 1;
 
-            _tasksRepositoryMock.Setup(repo => repo.GetByIdsAsync(It.IsAny<List<int>>()))
+            _redisServiceMock.Setup(repo => repo.GetTaskByIdsAsync(It.IsAny<List<int>>()))
                 .ReturnsAsync([]);
 
             var ex = Assert.ThrowsAsync<ArgumentException>(async () => await _tasksService.Delete(id));
