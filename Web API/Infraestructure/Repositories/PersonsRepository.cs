@@ -40,6 +40,20 @@ namespace Infrastructure.Repositories
                 .ToListAsync();
         }
 
+        /// <inheritdoc />
+        public async Task Detach(PersonsEntity person)
+        {
+            var entry = _context.Entry(person);
+            if (entry.State == EntityState.Detached)
+            {
+                return;
+            }
+
+            entry.State = EntityState.Detached;
+
+            await Task.CompletedTask;
+        }
+
         #endregion
     }
 }

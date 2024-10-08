@@ -167,6 +167,9 @@ namespace Application.Services
 
             // Sends a message to RabbitMQ queue to save the new task.
             _messageSender.SendMessage(tasksDto);
+
+            // Clear the cached values for the person and associated tasks.
+            await _redisService.RemoveCachedValue($"person:{tasksDto.PersonId}");
         }
 
         /// <inheritdoc />
@@ -174,9 +177,19 @@ namespace Application.Services
         {
             #region Validations
 
-            var person = await ValidateTasksDTO(tasksDto);
+            await ValidateTasksDTO(tasksDto);
 
             #endregion
+
+            // Detach the existing tracked entity if necessary
+            var existingPerson = (await _personsRepository.GetByIdsAsync([tasksDto.PersonId])).First();
+            if (existingPerson != null)
+            {
+                await _personsRepository.Detach(existingPerson);
+            }
+
+            var person = (await _personsRepository.GetByIdsAsync([tasksDto.PersonId]))
+                .FirstOrDefault();
 
             // Retrieves the task entity.
             var task = (await _redisService
@@ -195,14 +208,21 @@ namespace Application.Services
             task.StartDate = tasksDto.StartDate;
             task.EndDate = tasksDto.EndDate;
 
-            // Saves the task entity.
-            await _tasksRepository.UpdateAsync(task);
-
             tasksDto.Person = person is not null ? new PersonsDTO
             {
                 Id = person.Id,
                 Name = person.Name
             } : null;
+
+            // Detach the existing tracked entity if necessary
+            var existingTask = (await _tasksRepository.GetByIdsAsync([tasksDto.Id])).First();
+            if (existingTask != null)
+            {
+                await _tasksRepository.Detach(existingTask);
+            }
+
+            // Saves the task entity.
+            await _tasksRepository.UpdateAsync(task);
 
             // Clear the cached values for the task and associated persons.
             await _redisService.RemoveCachedValue($"task:{tasksDto.Id}");
@@ -258,21 +278,20 @@ namespace Application.Services
         #region Protected Methods
 
         /// <summary>
-        /// Validates the provided <see cref="TasksDTO"/> object.
-        /// Checks that the task's properties are valid and that the associated person exists.
+        /// Validates the provided <see cref="TasksDTO"/> object for any inconsistencies.
+        /// Checks if the person ID exists, ensures required fields are populated, 
+        /// and validates the task's severity and date formats.
         /// </summary>
-        /// <param name="tasksDto">The task data transfer object to validate.</param>
-        /// <returns>A <see cref="PersonsEntity"/> representing the associated person if validation succeeds.</returns>
-        /// <exception cref="ArgumentNullException">Thrown when <paramref name="tasksDto"/> is null.</exception>
-        /// <exception cref="ArgumentException">Thrown when any of the task properties are invalid, or when no person is found with the specified ID.</exception>
-        protected async Task<PersonsEntity> ValidateTasksDTO(TasksDTO tasksDto)
+        /// <param name="tasksDto">The DTO containing task information to validate.</param>
+        /// <exception cref="ArgumentException">Thrown when validation fails for any field.</exception>
+        protected async Task ValidateTasksDTO(TasksDTO tasksDto)
         {
             ArgumentNullException.ThrowIfNull(tasksDto, nameof(tasksDto));
 
             // Validates if a person with the provided ID exists.
-            var person = (await _redisService
+            if ((await _redisService
                 .GetPersonsByIdsAsync([tasksDto.PersonId]))
-                .FirstOrDefault() ?? throw new ArgumentException($"No person found with ID {tasksDto.PersonId}.", nameof(tasksDto.PersonId));
+                .FirstOrDefault() is null) throw new ArgumentException($"No person found with ID {tasksDto.PersonId}.", nameof(tasksDto.PersonId));
 
             // Check if the task title is provided and not empty.
             if (string.IsNullOrEmpty(tasksDto.Title)) throw new ArgumentException("Title cannot be null or empty.", nameof(tasksDto.Title));
@@ -284,9 +303,7 @@ namespace Application.Services
             if (!DateTime.TryParse(tasksDto.StartDate.ToString(), out _) || tasksDto.StartDate < DateTime.Now) throw new ArgumentException("Start date is not in a valid format.");
 
             // Validate if the EndDate is in a valid format.
-            if (!DateTime.TryParse(tasksDto.EndDate.ToString(), out _)) throw new ArgumentException("End date is not in a valid format.");
-
-            return person;
+            if (tasksDto.EndDate is not null && !DateTime.TryParse(tasksDto.EndDate.ToString(), out _)) throw new ArgumentException("End date is not in a valid format.");
         }
 
         #endregion

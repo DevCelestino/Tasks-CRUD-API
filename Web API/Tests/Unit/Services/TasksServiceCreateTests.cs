@@ -86,9 +86,9 @@ namespace Tests.Unit.Services
         #region Tests
 
         /// <summary>
-        /// 
+        /// Tests that a valid task DTO sends a message successfully.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldSendMessage_WhenValidDataProvided()
@@ -119,9 +119,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentNullException is thrown when a null task DTO is provided.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidDTOProvided()
@@ -137,9 +137,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentNullException is thrown when a null task DTO is provided.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidPersonIDProvided()
@@ -160,9 +160,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentException is thrown when an invalid title is provided in the task DTO.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidTitleProvided()
@@ -190,9 +190,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentException is thrown when an invalid severity value is provided in the task DTO.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidSeverityProvided()
@@ -222,9 +222,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentException is thrown when an invalid start date is provided in the task DTO.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidStartDateProvided()
@@ -255,9 +255,9 @@ namespace Tests.Unit.Services
         }
 
         /// <summary>
-        /// 
+        /// Tests that an ArgumentException is thrown when an invalid end date is provided in the task DTO.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Task representing the asynchronous operation.</returns>
         [Test]
         [Category("CreateTask")]
         public async Task CreateTask_ShouldThrowException_WhenInvalidEndDateProvided()
