@@ -40,5 +40,13 @@ namespace Infrastructure.Repositories.Interfaces
         /// <param name="task">The task entity to be deleted.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         Task DeleteAsync(TasksEntity task);
+
+        /// <summary>
+        /// Detaches the specified task entity from the DbContext, 
+        /// preventing it from being tracked for changes. 
+        /// </summary>
+        /// <param name="task">The task entity to detach.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task Detach(TasksEntity task);
     }
 }

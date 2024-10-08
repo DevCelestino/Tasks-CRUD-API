@@ -19,5 +19,12 @@ namespace Infrastructure.Repositories.Interfaces
         /// </summary>
         /// <returns>A task representing the asynchronous operation, containing an enumerable of all persons.</returns>
         Task<IEnumerable<PersonsEntity>> GetAllAsync();
+
+        /// <summary>
+        /// Detaches the specified <see cref="TasksEntity"/> from the tracking context.
+        /// </summary>
+        /// <param name="task">The task entity to detach from the context.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task Detach(PersonsEntity person);
     }
 }

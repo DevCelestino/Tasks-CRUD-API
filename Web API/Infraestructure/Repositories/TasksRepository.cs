@@ -63,6 +63,20 @@ namespace Infrastructure.Repositories
             await _context.SaveChangesAsync();
         }
 
+        /// <inheritdoc />
+        public async Task Detach(TasksEntity task)
+        {
+            var entry = _context.Entry(task);
+            if (entry.State == EntityState.Detached)
+            {
+                return;
+            }
+
+            entry.State = EntityState.Detached;
+
+            await Task.CompletedTask;
+        }
+
         #endregion
     }
 }
